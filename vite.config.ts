@@ -11,14 +11,29 @@ export default defineConfig(({ mode }) => ({
     host: '::',
     port: 8080,
   },
-  plugins: [react(), tailwindcss(), shadowCssPlugin(), inlineCssPlugin()],
+  plugins: [
+    react({
+      useAtYourOwnRisk_mutateSwcOptions(options) {
+        options.jsc = options.jsc || {};
+        options.jsc.transform = options.jsc.transform || {};
+        options.jsc.transform.react = options.jsc.transform.react || {};
+        options.jsc.transform.react.development = mode === 'development';
+        options.jsc.transform.react.refresh = mode === 'development';
+        options.jsc.transform.react.runtime = 'automatic';
+      },
+    }),
+    tailwindcss(),
+    shadowCssPlugin(),
+    inlineCssPlugin(),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    __DEV__: mode === 'development',
     'import.meta.env.VITE_BACKEND_URL': JSON.stringify(
       process.env.VITE_BACKEND_URL || 'https://api.kalifinder.com'
     ),
