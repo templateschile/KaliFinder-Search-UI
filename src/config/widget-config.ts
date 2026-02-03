@@ -31,6 +31,8 @@ export interface WidgetConfig {
     responsive: boolean;
     mobileBreakpoint: number;
     animationsEnabled: boolean;
+    language: string;
+    fallbackLanguage: string;
   };
 
   /** Analytics Configuration */
@@ -97,6 +99,8 @@ export const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
     responsive: true,
     mobileBreakpoint: 768, // pixels
     animationsEnabled: true,
+    language: 'en',
+    fallbackLanguage: 'en',
   },
 
   analytics: {

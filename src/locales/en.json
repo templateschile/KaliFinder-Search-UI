@@ -1,0 +1,79 @@
+{
+  "search": {
+    "placeholder": "Search products...",
+    "ariaLabel": "Search for products",
+    "clear": "Clear search",
+    "results": "Search Results",
+    "recent": "Recent Searches",
+    "noProducts": "No products found",
+    "suggestions": {
+      "enable": "Enable autocomplete suggestions",
+      "disable": "Disable autocomplete suggestions",
+      "on": "Suggestions ON",
+      "off": "Suggestions OFF",
+      "ariaLabel": "Search suggestions",
+      "show": "Show suggestions",
+      "hide": "Hide suggestions"
+    },
+    "loading": "Loading search results...",
+    "noResults": "No results found",
+    "showingRecommendations": "Showing Recommendations",
+    "recommendedForYou": "Recommended for You",
+    "viewProduct": "View Product"
+  },
+  "filters": {
+    "open": "Open filters",
+    "close": "Close filters",
+    "stock": "Stock Status",
+    "reset": "Reset all filters",
+    "apply": "Show filtered products",
+    "showCount": "Show {{count}} {{product, one {Product} other {Products}}}",
+    "closeWithoutApplying": "Close without applying",
+    "resetAll": "Reset all filters and search"
+  },
+  "stock": {
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "onBackorder": "On Backorder"
+  },
+  "featured": {
+    "title": "Featured Products",
+    "featured": "Featured",
+    "notFeatured": "Not Featured"
+  },
+  "sale": {
+    "title": "Sale Status",
+    "onSale": "On Sale",
+    "notOnSale": "Not On Sale"
+  },
+  "aria": {
+    "collapseCategory": "Collapse {{name}} category",
+    "expandCategory": "Expand {{name}} category",
+    "closeSearch": "Close search",
+    "sortResults": "Sort results",
+    "poweredBy": "Powered by KaliFinder",
+    "clearRecentSearches": "Clear all recent searches"
+  },
+  "categories": {
+    "title": "Categories",
+    "selectAll": "Select All",
+    "clearAll": "Clear All"
+  },
+  "common": {
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "apply": "Apply",
+    "reset": "Reset",
+    "clear": "Clear"
+  },
+  "price": {
+    "title": "Price Range",
+    "min": "Min",
+    "max": "Max",
+    "apply": "Apply Price Filter",
+    "discount": "OFF"
+  }
+}

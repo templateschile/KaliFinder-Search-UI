@@ -1,0 +1,79 @@
+{
+  "search": {
+    "placeholder": "Buscar productos...",
+    "ariaLabel": "Buscar productos",
+    "clear": "Limpiar búsqueda",
+    "results": "Resultados de Búsqueda",
+    "recent": "Búsquedas Recientes",
+    "noProducts": "No se encontraron productos",
+    "suggestions": {
+      "enable": "Activar sugerencias de autocompletar",
+      "disable": "Desactivar sugerencias de autocompletar",
+      "on": "Sugerencias ACTIVADAS",
+      "off": "Sugerencias DESACTIVADAS",
+      "ariaLabel": "Sugerencias de búsqueda",
+      "show": "Mostrar sugerencias",
+      "hide": "Ocultar sugerencias"
+    },
+    "loading": "Cargando resultados de búsqueda...",
+    "noResults": "No se encontraron resultados",
+    "showingRecommendations": "Mostrando Recomendaciones",
+    "recommendedForYou": "Recomendado para ti",
+    "viewProduct": "Ver Producto"
+  },
+  "filters": {
+    "open": "Abrir filtros",
+    "close": "Cerrar filtros",
+    "stock": "Estado de Stock",
+    "reset": "Restablecer todos los filtros",
+    "apply": "Mostrar productos filtrados",
+    "showCount": "Mostrar {{count}} {{product, one {producto} other {productos}}}",
+    "closeWithoutApplying": "Cerrar sin aplicar",
+    "resetAll": "Restablecer todos los filtros y búsqueda"
+  },
+  "stock": {
+    "inStock": "En Stock",
+    "outOfStock": "Sin Stock",
+    "onBackorder": "En Pedido"
+  },
+  "featured": {
+    "title": "Productos Destacados",
+    "featured": "Destacado",
+    "notFeatured": "No Destacado"
+  },
+  "sale": {
+    "title": "Estado de Oferta",
+    "onSale": "En Oferta",
+    "notOnSale": "No En Oferta"
+  },
+  "aria": {
+    "collapseCategory": "Contraer categoría {{name}}",
+    "expandCategory": "Expandir categoría {{name}}",
+    "closeSearch": "Cerrar búsqueda",
+    "sortResults": "Ordenar resultados",
+    "poweredBy": "Desarrollado por KaliFinder",
+    "clearRecentSearches": "Limpiar todas las búsquedas recientes"
+  },
+  "categories": {
+    "title": "Categorías",
+    "selectAll": "Seleccionar Todo",
+    "clearAll": "Limpiar Todo"
+  },
+  "common": {
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "apply": "Aplicar",
+    "reset": "Restablecer",
+    "clear": "Limpiar"
+  },
+  "price": {
+    "title": "Rango de Precios",
+    "min": "Mín",
+    "max": "Máx",
+    "apply": "Aplicar Filtro de Precio",
+    "discount": "MENOS"
+  }
+}

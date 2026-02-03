@@ -8,6 +8,7 @@ import {
 } from '@/utils/price';
 import { memo, useCallback, useMemo } from 'react';
 import type { Product } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCardProps {
   product: Product;
@@ -26,6 +27,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   calculateDiscountPercentage,
   formatPrice,
 }) => {
+  const { t } = useTranslation();
   // Memoize expensive calculations
   const hasDiscount = useMemo(
     () => hasValidDiscount(product.regularPrice ?? product.price, product.salePrice),
@@ -120,7 +122,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           {/* Featured Badge */}
           {product.featured && (
             <div className="rounded-full border border-white/30 bg-[rgba(124,58,237,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
-              ⭐ Featured
+              ⭐ t('product.featured', 'Featured')
             </div>
           )}
 
@@ -130,7 +132,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               className="rounded-full border border-white/30 bg-[rgba(124,58,237,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label={`${Math.abs(discountPercentage)}% discount`}
             >
-              {Math.abs(discountPercentage)}% OFF
+              {Math.abs(discountPercentage)}% t('price.discount', 'OFF')
             </div>
           )}
 
@@ -140,7 +142,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               className="rounded-full border border-white/30 bg-[rgba(220,38,38,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label="Out of stock"
             >
-              Out of Stock
+              t('stock.outOfStock', 'Out of Stock')
             </div>
           )}
 
@@ -150,7 +152,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               className="rounded-full border border-white/30 bg-[rgba(251,146,60,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label="On backorder"
             >
-              On Backorder
+              {t('stock.onBackorder', 'On Backorder')}
             </div>
           )}
         </div>
@@ -158,7 +160,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         {/* View Product Overlay - Shown on hover */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-focus-within:opacity-100 group-hover:opacity-100">
           <span className="text-black-600 rounded-lg bg-white px-4 py-2 text-sm font-semibold shadow-lg transition-all duration-200 hover:bg-purple-600 hover:text-white active:scale-95 sm:px-6 sm:py-2.5 sm:text-base">
-            View Product
+            {t('search.viewProduct', 'View Product')}
           </span>
         </div>
       </div>

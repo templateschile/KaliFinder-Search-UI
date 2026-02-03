@@ -9,6 +9,7 @@ import type { CartProduct, CartResponse, Product } from '../types';
 import { createCartInstance, detectPlatform } from './ajax-cart';
 import { logger } from './logger';
 import { safeLocalStorage, storageHelpers } from './safe-storage';
+import { t } from 'i18next';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -217,7 +218,7 @@ export const addToCart = async (product: Product, storeUrl: string): Promise<Car
       duration: 5000,
       action: product.productUrl
         ? {
-            label: 'View Product',
+            label: t('search.viewProduct'),
             onClick: () => window.open(product.productUrl, '_blank'),
           }
         : undefined,
@@ -244,7 +245,7 @@ export const handleCartError = (error: Error | unknown, product: Product): strin
     duration: 5000,
     action: product.productUrl
       ? {
-          label: 'View Product',
+          label: t('search.viewProduct'),
           onClick: () => window.open(product.productUrl, '_blank'),
         }
       : undefined,

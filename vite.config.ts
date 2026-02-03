@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
         options.jsc.transform = options.jsc.transform || {};
         options.jsc.transform.react = options.jsc.transform.react || {};
         options.jsc.transform.react.development = mode === 'development';
-        options.jsc.transform.react.refresh = mode === 'development';
+        options.jsc.transform.react.refresh = false;
         options.jsc.transform.react.runtime = 'automatic';
       },
     }),
@@ -47,10 +47,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    sourcemap: false,
-    minify: 'esbuild',
+    sourcemap: mode === 'development',
+    minify: mode === 'development' ? false : 'esbuild',
     esbuild: {
-      // Strip debug statements from the final CDN bundle
+      // Strip debug statements from production builds only
       drop: mode === 'production' ? ['console', 'debugger'] : [],
       // More aggressive minification
       legalComments: 'none',

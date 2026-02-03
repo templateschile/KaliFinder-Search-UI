@@ -1,6 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Product } from '../types';
 import { ProductCard } from './products/ProductCard';
+import { useTranslation } from 'react-i18next';
 
 interface RecommendationsProps {
   recommendations: Product[];
@@ -19,6 +20,8 @@ const Recommendations: React.FC<RecommendationsProps> = ({
   handleAddToCart,
   formatPrice,
 }) => {
+  const { t } = useTranslation();
+
   if (recommendations.length === 0) {
     return (
       <div className="mb-12">
@@ -67,7 +70,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({
             />
           </svg>
         </span>
-        <h3 className="text-xl font-bold text-gray-900">Recommended for You</h3>
+        <h3 className="text-xl font-bold text-gray-900">{t('search.recommendedForYou')}</h3>
       </div>
       <div className="grid w-full grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
         {recommendations.map((product) => (

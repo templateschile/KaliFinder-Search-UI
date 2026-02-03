@@ -7,6 +7,7 @@ import { ShoppingCart, X } from '@/components/icons';
 import type { Product } from '@/types';
 import { parsePriceToNumber } from '@/utils/price';
 import { useEffect } from 'react';
+import { t } from 'i18next';
 
 interface ProductQuickViewProps {
   product: Product | null;
@@ -130,17 +131,17 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 {product.featured && (
                   <div className="rounded-full bg-purple-600/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
-                    ⭐ Featured
+                    ⭐ {t('product.featured', 'Featured')}
                   </div>
                 )}
                 {hasDiscount && discountPercentage && (
                   <div className="rounded-full bg-red-600/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
-                    -{discountPercentage}% OFF
+                    -{discountPercentage}% {t('price.discount', 'OFF')}
                   </div>
                 )}
                 {isOutOfStock && (
                   <div className="rounded-full bg-gray-800/95 px-3 py-1 text-xs font-bold text-white uppercase shadow-md backdrop-blur-sm sm:text-sm">
-                    Out of Stock
+                    {t('stock.outOfStock', 'Out of Stock')}
                   </div>
                 )}
               </div>

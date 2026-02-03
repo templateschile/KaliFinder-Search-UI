@@ -20,10 +20,13 @@ import {
 } from './utils/header-replacement';
 import { log, setDebugMode } from './utils/logger';
 import { bindSearchTriggers, setupSearchObserver } from './utils/search-binding';
+import { initializeI18n } from '../i18n/config';
+import { getStoreSetupService } from '../services/store-setup.service';
 
 export type InitOptions = {
   storeUrl: string;
   debug?: boolean;
+  language?: string;
 };
 
 export type Controller = {
@@ -47,6 +50,44 @@ export function init(options: InitOptions): Controller {
   // Configure debug mode
   setDebugMode(options.debug ?? false);
   log('Initializing widget with options:', options);
+
+  // Fetch store setup data and initialize i18n with store language
+  (async () => {
+    try {
+      const storeSetupService = getStoreSetupService(options.storeUrl);
+
+      // Try to fetch store setup data
+      let storeLanguage = options.language; // Start with user-provided language
+
+      try {
+        const storeSetupData = await storeSetupService.fetchStoreSetupData();
+
+        // Use store language if no explicit language provided and store has language configured
+        if (!options.language && storeSetupData.language) {
+          storeLanguage = storeSetupData.language;
+          log('Using store language from API:', storeLanguage);
+        } else if (options.language) {
+          log('Using explicitly provided language:', options.language);
+        }
+
+        // Log store configuration for debugging
+        logger.debug('Store setup data loaded:', {
+          language: storeSetupData.language,
+          currency: storeSetupData.currency,
+          storeName: storeSetupData.storeName,
+        });
+      } catch (storeSetupError) {
+        logger.warn('Failed to fetch store setup data, using fallback language', storeSetupError);
+        storeLanguage = storeLanguage || 'en'; // Fallback to English if all else fails
+      }
+
+      // Initialize i18n with determined language
+      initializeI18n(storeLanguage);
+    } catch (error) {
+      logger.error('Failed to initialize store setup, using default language:', error);
+      initializeI18n(options.language || 'en');
+    }
+  })();
 
   logger.info('KaliFinder Search Widget - Initializing');
   logger.debug('Platform detected', { platform: uiDebugger.getPlatform() });
