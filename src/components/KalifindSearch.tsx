@@ -35,6 +35,7 @@ import { isSearchResponse, type FacetBucket } from '../types/api.types';
 import { ProductCard } from './products/ProductCard';
 import Recommendations from './Recommendations';
 import ScrollToTop from './ScrollToTop';
+import { getStoreSetupService } from '@/services/store-setup.service';
 
 const CURRENCY_SYMBOL_REGEX = /[\p{Sc}]/u;
 const ISO_CURRENCY_CODE_REGEX = /^[A-Z]{3}$/;
@@ -369,13 +370,36 @@ const KalifindSearch: React.FC<{
 }) => {
   const { t } = useTranslation();
   const [storeType, setStoreType] = useState<'shopify' | 'woocommerce' | null>(null);
-  const [storeCurrencyCode, setStoreCurrencyCode] = useState<string | undefined>();
+  // `storeCurrencySymbol` now holds either an ISO currency code (e.g. "USD")
+  // or a symbol (e.g. "$") depending on source priority.
   const [storeCurrencySymbol, setStoreCurrencySymbol] = useState<string | undefined>();
+  const [storeCurrencyThousandSeparator, setStoreCurrencyThousandSeparator] = useState<
+    string | undefined
+  >();
 
   // Log component mount
   useEffect(() => {
-    // Component mounted - ready for interaction
-  }, []);
+    const storeSetupService = getStoreSetupService(storeUrl!);
+    const decodeHtmlEntity = (str: string) => {
+      const textArea = document.createElement('textarea');
+      textArea.innerHTML = str;
+      return textArea.value;
+    };
+
+    (async () => {
+      try {
+        const setupData = await storeSetupService.fetchStoreSetupData();
+        setStoreCurrencySymbol(decodeHtmlEntity(setupData.currency_symbol!));
+        setStoreCurrencyThousandSeparator(
+          setupData.currency_thousand_separator
+            ? decodeHtmlEntity(setupData.currency_thousand_separator)
+            : undefined
+        );
+      } catch (error) {
+        logger.error('Failed to fetch store setup data:', error);
+      }
+    })();
+  }, [storeUrl]);
 
   // Determine if this is a Shopify store
   const isShopifyStore =
@@ -815,9 +839,6 @@ const KalifindSearch: React.FC<{
       if (!info.code && !info.symbol) {
         continue;
       }
-      if (info.code) {
-        setStoreCurrencyCode((previous) => (previous === info.code ? previous : info.code));
-      }
       if (info.symbol) {
         setStoreCurrencySymbol((previous) => (previous === info.symbol ? previous : info.symbol));
       }
@@ -1032,18 +1053,6 @@ const KalifindSearch: React.FC<{
             }
           }
         }
-
-        // ✅ Get currency from backend response (store-level metadata)
-        if (result.currency) {
-          setStoreCurrencyCode(result.currency);
-          console.log(`💱 Currency from backend: ${result.currency}`);
-        } else {
-          console.warn('⚠️ Backend currency not available, will extract from products');
-          // Fallback: Extract currency from products if backend doesn't provide it
-          if (result.products && Array.isArray(result.products) && result.products.length > 0) {
-            updateCurrencyFromProducts(result.products as Product[]);
-          }
-        }
       }
 
       setGlobalFacetsFetched(true);
@@ -1051,7 +1060,7 @@ const KalifindSearch: React.FC<{
     } catch (error) {
       console.error('Failed to fetch global facets:', error);
     }
-  }, [storeUrl, globalFacetsFetched, updateCurrencyFromProducts]);
+  }, [storeUrl, globalFacetsFetched]);
 
   // Fetch vendor-controlled recommendations
   const fetchRecommendations = useCallback(async () => {
@@ -1159,23 +1168,12 @@ const KalifindSearch: React.FC<{
       }));
 
       setRecommendations(productsWithStoreUrl); // Show all recommendations
-
-      // ✅ Get currency from backend response if available
-      if (isSearchResponse(result) && result.currency) {
-        setStoreCurrencyCode(result.currency);
-        console.log(`💱 Currency from backend (recommendations): ${result.currency}`);
-      } else if (productsWithStoreUrl.length > 0) {
-        // Fallback: Extract from products if backend doesn't provide currency
-        console.warn('⚠️ Backend currency not available, extracting from products');
-        updateCurrencyFromProducts(productsWithStoreUrl);
-      }
-
       setRecommendationsFetched(true);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
       setRecommendations([]);
     }
-  }, [storeUrl, recommendationsFetched, updateCurrencyFromProducts]);
+  }, [storeUrl, recommendationsFetched]);
 
   // Search behavior state management according to search.md requirements
   useEffect(() => {
@@ -1487,12 +1485,6 @@ const KalifindSearch: React.FC<{
               // Process facets from backend (already reactive with disjunctive faceting)
               if (result.facets) {
                 const facets = result.facets;
-
-                // ✅ Get currency from backend response (store-level metadata)
-                if (result.currency) {
-                  setStoreCurrencyCode(result.currency);
-                  console.log(`💱 Currency from backend: ${result.currency}`);
-                }
 
                 // ❌ DO NOT update stock status counts from filtered results
                 // Stock counts should remain static (global) - always showing total available products
@@ -2247,16 +2239,6 @@ const KalifindSearch: React.FC<{
       if (products.length === 0) {
         setHasMoreProducts(false);
       } else {
-        // ✅ Get currency from backend response if available
-        if (isSearchResponse(result) && result.currency) {
-          setStoreCurrencyCode(result.currency);
-          console.log(`💱 Currency from backend (load more): ${result.currency}`);
-        } else if (products.length > 0) {
-          // Fallback: Extract from products if backend doesn't provide currency
-          console.warn('⚠️ Backend currency not available, extracting from products');
-          updateCurrencyFromProducts(products);
-        }
-
         // Ensure all products have storeUrl for cart operations
         const productsWithStoreUrl = products.map((product) => ({
           ...product,
@@ -2288,7 +2270,6 @@ const KalifindSearch: React.FC<{
     currentPage,
     displayedProducts,
     debouncedFilters,
-    updateCurrencyFromProducts,
   ]);
 
   // Infinite scroll observer for mobile
@@ -2406,8 +2387,9 @@ const KalifindSearch: React.FC<{
   );
 
   useEffect(() => {
-    setStoreCurrencyCode(undefined);
+    // Reset currency symbol/state when store changes
     setStoreCurrencySymbol(undefined);
+    setStoreCurrencyThousandSeparator(undefined);
   }, [storeUrl]);
 
   const formatPrice = useCallback(
@@ -2420,42 +2402,9 @@ const KalifindSearch: React.FC<{
         return trimmed;
       }
 
-      let workingString = trimmed;
-      let detectedCode: string | undefined;
-      const isoMatch = trimmed.match(/\b[A-Z]{3}\b/);
-      if (isoMatch) {
-        const code = isIsoCurrencyCode(isoMatch[0]);
-        if (code) {
-          detectedCode = code;
-          workingString = trimmed.replace(isoMatch[0], '').trim();
-        }
-      }
-
-      const amount = parsePriceToNumber(workingString);
+      const amount = parsePriceToNumber(trimmed);
       if (amount === undefined) {
         return trimmed;
-      }
-
-      const formatNumber = (code?: string) => {
-        if (!code) return undefined;
-        try {
-          return new Intl.NumberFormat(undefined, {
-            style: 'currency',
-            currency: code,
-          }).format(amount);
-        } catch {
-          return undefined;
-        }
-      };
-
-      const formattedWithDetectedCode = formatNumber(detectedCode);
-      if (formattedWithDetectedCode) {
-        return formattedWithDetectedCode;
-      }
-
-      const formattedWithStoreCode = formatNumber(storeCurrencyCode);
-      if (formattedWithStoreCode) {
-        return formattedWithStoreCode;
       }
 
       if (storeCurrencySymbol) {
@@ -2463,7 +2412,17 @@ const KalifindSearch: React.FC<{
           minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
           maximumFractionDigits: 2,
         });
-        return `${storeCurrencySymbol}${localizedAmount}`;
+
+        let finalAmount = localizedAmount;
+        if (storeCurrencyThousandSeparator) {
+          const groupingSample = (1000).toLocaleString(undefined, { maximumFractionDigits: 0 });
+          const groupSep = groupingSample.replace(/[0-9]/g, '').charAt(0);
+          if (groupSep && groupSep !== storeCurrencyThousandSeparator) {
+            finalAmount = localizedAmount.split(groupSep).join(storeCurrencyThousandSeparator);
+          }
+        }
+
+        return `${storeCurrencySymbol}${finalAmount}`;
       }
 
       // Default to Euro symbol if no currency is detected
@@ -2471,10 +2430,40 @@ const KalifindSearch: React.FC<{
         minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
         maximumFractionDigits: 2,
       });
-      return `€${localizedAmount}`;
+
+      let finalAmount = localizedAmount;
+      if (storeCurrencyThousandSeparator) {
+        const groupingSample = (1000).toLocaleString(undefined, { maximumFractionDigits: 0 });
+        const groupSep = groupingSample.replace(/[0-9]/g, '').charAt(0);
+        if (groupSep && groupSep !== storeCurrencyThousandSeparator) {
+          finalAmount = localizedAmount.split(groupSep).join(storeCurrencyThousandSeparator);
+        }
+      }
+
+      return `€${finalAmount}`;
     },
-    [storeCurrencyCode, storeCurrencySymbol]
+    [storeCurrencySymbol, storeCurrencyThousandSeparator]
   );
+
+  const formatIntegerAmount = useCallback(
+    (amount: number) => {
+      const localizedAmount = amount.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      if (!storeCurrencyThousandSeparator) return localizedAmount;
+
+      const groupingSample = (1000).toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const groupSep = groupingSample.replace(/[0-9]/g, '').charAt(0);
+
+      if (groupSep && groupSep !== storeCurrencyThousandSeparator) {
+        return localizedAmount.split(groupSep).join(storeCurrencyThousandSeparator);
+      }
+
+      return localizedAmount;
+    },
+    [storeCurrencyThousandSeparator]
+  );
+
+  const currencyLabel = storeCurrencySymbol || '€';
 
   return (
     <div
@@ -3071,12 +3060,15 @@ const KalifindSearch: React.FC<{
                               <div className="text-foreground flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-base font-medium">
                                 <span className="text-muted-foreground text-sm">From</span>
                                 <span className="text-lg font-semibold">
-                                  {filters.priceRange[0]} €
+                                  {formatIntegerAmount(filters.priceRange[0])} {currencyLabel}
                                 </span>
                                 <span className="text-muted-foreground mx-2">-</span>
                                 <span className="text-muted-foreground text-sm">To</span>
                                 <span className="text-lg font-semibold">
-                                  {Math.min(filters.priceRange[1], filteredMaxPrice)} €
+                                  {formatIntegerAmount(
+                                    Math.min(filters.priceRange[1], filteredMaxPrice)
+                                  )}{' '}
+                                  {currencyLabel}
                                 </span>
                               </div>
                             </div>
@@ -3649,8 +3641,13 @@ const KalifindSearch: React.FC<{
                         className="mb-6 w-full"
                       />
                       <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                        <span>{filters.priceRange[0]} €</span>
-                        <span>{Math.min(filters.priceRange[1], filteredMaxPrice)} €</span>
+                        <span>
+                          {formatIntegerAmount(filters.priceRange[0])} {currencyLabel}
+                        </span>
+                        <span>
+                          {formatIntegerAmount(Math.min(filters.priceRange[1], filteredMaxPrice))}{' '}
+                          {currencyLabel}
+                        </span>
                       </div>
                     </div>
                   </AccordionContent>

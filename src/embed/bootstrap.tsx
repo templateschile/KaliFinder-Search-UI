@@ -73,8 +73,8 @@ export function init(options: InitOptions): Controller {
         // Log store configuration for debugging
         logger.debug('Store setup data loaded:', {
           language: storeSetupData.language,
-          currency: storeSetupData.currency,
-          storeName: storeSetupData.storeName,
+          currencySymbol: storeSetupData.currency_symbol,
+          storeName: storeSetupData.store_name,
         });
       } catch (storeSetupError) {
         logger.warn('Failed to fetch store setup data, using fallback language', storeSetupError);

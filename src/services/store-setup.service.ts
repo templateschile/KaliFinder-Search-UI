@@ -154,37 +154,6 @@ export class StoreSetupService {
       };
     }
   }
-
-  /**
-   * Get just the language from store setup data
-   */
-  async getStoreLanguage(): Promise<string> {
-    try {
-      const setupData = await this.fetchStoreSetupData();
-      const lang = setupData.language;
-      if (!lang) return 'en';
-
-      // If language is in form "en_US", return the part before "_"
-      const parts = lang.split('_');
-      return parts[0] || 'en';
-    } catch (error) {
-      logger.error('Failed to get store language:', error);
-      return 'en'; // Fallback to English
-    }
-  }
-
-  /**
-   * Get currency from store setup data
-   */
-  async getStoreCurrency(): Promise<string | undefined> {
-    try {
-      const setupData = await this.fetchStoreSetupData();
-      return setupData.currency;
-    } catch (error) {
-      logger.error('Failed to get store currency:', error);
-      return undefined;
-    }
-  }
 }
 
 /**

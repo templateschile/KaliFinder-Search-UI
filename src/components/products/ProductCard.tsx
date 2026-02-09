@@ -132,7 +132,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               className="rounded-full border border-white/30 bg-[rgba(124,58,237,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label={`${Math.abs(discountPercentage)}% discount`}
             >
-              {Math.abs(discountPercentage)}% t('price.discount', 'OFF')
+              {Math.abs(discountPercentage)}% {t('price.discount', 'OFF')}
             </div>
           )}
 
@@ -142,7 +142,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               className="rounded-full border border-white/30 bg-[rgba(220,38,38,0.95)] px-2 py-0.5 text-xs font-bold tracking-wide text-white uppercase shadow-md backdrop-blur-sm sm:text-sm"
               aria-label="Out of stock"
             >
-              t('stock.outOfStock', 'Out of Stock')
+              {t('stock.outOfStock', 'Out of Stock')}
             </div>
           )}
 
@@ -170,7 +170,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         {/* Product Title - Now a clickable link */}
         <button
           onClick={handleProductClick}
-          className="line-clamp-2 w-full cursor-pointer touch-manipulation p-0 text-left text-sm leading-tight font-semibold text-gray-900 transition-colors duration-200 hover:text-purple-600 focus:underline focus:outline-none active:text-purple-700 sm:text-base sm:leading-snug"
+          className="line-clamp-2 min-h-[2.5em] w-full cursor-pointer touch-manipulation p-0 text-left text-sm leading-tight font-semibold text-gray-900 transition-colors duration-200 hover:text-purple-600 focus:underline focus:outline-none active:text-purple-700 sm:min-h-[2.75em] sm:text-base sm:leading-snug"
           aria-label={`View ${product.title}`}
         >
           {product.title}

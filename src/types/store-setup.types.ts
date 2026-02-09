@@ -10,8 +10,14 @@ export interface StoreSetupData {
   /** Store currency code (e.g., "USD", "EUR", "GBP") */
   currency?: string;
 
+  /** Store currency symbol (e.g., "$", "€", "£") */
+  currency_symbol?: string;
+
+  /** Store currency thousand separator (e.g., ".", ",") */
+  currency_thousand_separator?: string;
+
   /** Store name for display */
-  storeName?: string;
+  store_name?: string;
 
   /** Store locale for formatting (e.g., "en-US", "es-ES") */
   locale?: string;
