@@ -73,7 +73,6 @@
     "title": "Rango de Precios",
     "min": "Mín",
     "max": "Máx",
-    "apply": "Aplicar Filtro de Precio",
-    "discount": "MENOS"
+    "apply": "Aplicar Filtro de Precio"
   }
 }

@@ -12,6 +12,7 @@
     "skipLibCheck": true,
     "allowJs": true,
     "noUnusedLocals": false,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "sourceMap": true
   }
 }

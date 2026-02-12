@@ -101,7 +101,7 @@ export function init(options: InitOptions): Controller {
   uiDebugger.logResponsiveBreakpoint();
 
   // Track fallback trigger
-  let fallbackTrigger: HTMLButtonElement | null = null;
+  let fallbackTrigger: HTMLElement | null = null;
   let headerReplacementObserver: MutationObserver | null = null;
 
   // Inject styles then render React (CSS is inlined by shadowCssPlugin during build)
@@ -122,7 +122,7 @@ export function init(options: InitOptions): Controller {
       renderWidget(root, portalContainer, options.storeUrl);
     });
 
-  // Replace search elements in headers with our icon
+  // Hijack search elements in headers so they open our widget
   replaceHeaderSearchElements(openWidget);
 
   // Setup observer for dynamic header search elements

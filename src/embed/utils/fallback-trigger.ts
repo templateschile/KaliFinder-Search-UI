@@ -1,54 +1,59 @@
 /**
  * Fallback Trigger
- * Creates a floating search button when no native search elements are found
+ * Creates a floating search bar (desktop) or icon button (mobile)
+ * when no native search elements are found on the host page.
  */
 
 import { log } from './logger';
+import { getSearchIconMarkup, injectSearchBarStyles } from './search-bar-styles';
 
 export type OpenWidgetFn = (query?: string) => void;
 
 /**
- * Create fallback trigger button with inline styles
- * Returns button element that can be removed later
+ * Create the fallback trigger.
+ * Returns a wrapper element containing both the desktop bar and the mobile
+ * icon button (visibility is toggled via CSS media queries).
  */
-export function createFallbackTrigger(openWidget: OpenWidgetFn): HTMLButtonElement {
-  log('No native search elements found, creating fallback trigger button');
+export function createFallbackTrigger(openWidget: OpenWidgetFn): HTMLDivElement {
+  log('No native search elements found, creating fallback trigger');
 
-  const trigger = document.createElement('button');
-  trigger.setAttribute('aria-label', 'Open search');
+  // Ensure responsive styles are injected
+  injectSearchBarStyles();
 
-  // Inline styles to avoid CSS dependencies
-  trigger.style.position = 'fixed';
-  trigger.style.bottom = '24px';
-  trigger.style.right = '24px';
-  trigger.style.width = '56px';
-  trigger.style.height = '56px';
-  trigger.style.display = 'flex';
-  trigger.style.alignItems = 'center';
-  trigger.style.justifyContent = 'center';
-  trigger.style.borderRadius = '50%';
-  trigger.style.border = 'none';
-  trigger.style.cursor = 'pointer';
-  trigger.style.zIndex = '2147483646'; // One below widget container
-  trigger.style.pointerEvents = 'auto';
-  trigger.style.color = '#fff';
-  trigger.style.background = 'linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%)';
-  trigger.style.boxShadow = '0 4px 12px rgba(124,58,237,0.4)';
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('data-kalifinder-fallback', 'true');
 
-  // Search icon SVG - Static content, no XSS risk
-  trigger.innerHTML =
-    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;pointer-events:none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>';
+  // ── Desktop: pill-shaped floating search bar ──
+  const bar = document.createElement('button');
+  bar.className = 'kf-fallback-bar';
+  bar.setAttribute('aria-label', 'Open search');
+  bar.setAttribute('type', 'button');
+  bar.innerHTML = [
+    getSearchIconMarkup(20),
+    `<span class="kf-bar-text">Search products…</span>`,
+  ].join('');
 
-  trigger.onclick = () => openWidget('');
+  bar.onclick = () => openWidget('');
 
-  document.body.appendChild(trigger);
-  return trigger;
+  // ── Mobile: compact floating icon button ──
+  const icon = document.createElement('button');
+  icon.className = 'kf-fallback-icon';
+  icon.setAttribute('aria-label', 'Open search');
+  icon.setAttribute('type', 'button');
+  icon.innerHTML = getSearchIconMarkup(24);
+
+  icon.onclick = () => openWidget('');
+
+  wrapper.appendChild(bar);
+  wrapper.appendChild(icon);
+  document.body.appendChild(wrapper);
+  return wrapper;
 }
 
 /**
  * Remove fallback trigger from DOM
  */
-export function removeFallbackTrigger(trigger: HTMLButtonElement | null): void {
+export function removeFallbackTrigger(trigger: HTMLElement | null): void {
   if (trigger && document.body.contains(trigger)) {
     document.body.removeChild(trigger);
     log('Removed fallback trigger');

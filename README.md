@@ -45,7 +45,7 @@ pnpm dev  # http://localhost:8080
 
 | Command             | Description                              |
 | ------------------- | ---------------------------------------- |
-| `pnpm dev`          | Dev server with HMR (localhost:8080)     |
+| `pnpm dev`          | Dev embed build + preview (localhost:8080) |
 | `pnpm build`        | Production build (minified + inline CSS) |
 | `pnpm build:dev`    | Dev build (unminified + inline CSS)      |
 | `pnpm test:cdn`     | Build + test locally in browser          |
@@ -56,6 +56,39 @@ pnpm dev  # http://localhost:8080
 | `pnpm clean`        | Remove build artifacts                   |
 
 **Note:** `build` and `build:dev` automatically inline processed CSS into the JS bundle for Shadow DOM isolation.
+
+### Debugging on a local WordPress site (HTTP)
+
+1. Start the dev embed bundle server:
+
+```bash
+pnpm dev
+```
+
+2. Load the local bundle from WordPress (theme enqueue, header injection, etc.):
+
+```html
+<script
+  src="http://localhost:8080/kalifind-search.js?storeUrl=http://YOUR_LOCAL_WP_SITE&debug=true"
+  defer
+></script>
+```
+
+3. In Chrome/Edge DevTools:
+- Network: confirm `kalifind-search.js` **and** `kalifind-search.js.map` load with 200
+- Settings: ensure **JavaScript source maps** are enabled
+- Sources: set breakpoints in `src/embed/bootstrap.tsx` / `src/embed/utils/dom-setup.ts`
+
+Tip: you can open the widget without clicking UI:
+
+```js
+window.dispatchEvent(new CustomEvent('kalifinder:open', { detail: { query: 'test' } }));
+```
+
+Other useful debug hooks:
+- After the script loads, the widget exposes `window.Kalifinder` (UMD) and sets `window.KalifinderController`
+- You can open the widget with `window.KalifinderController?.open('test')`
+- UI debug utility: `window.__KALIFINDER_UI_DEBUG__`
 
 ---
 
