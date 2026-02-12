@@ -116,10 +116,7 @@ function hijackElement(element: Element, openWidget: OpenWidgetFn): boolean {
     }
 
     // ── Details / Summary (Shopify pattern) ──
-    if (
-      element instanceof HTMLDetailsElement ||
-      element.tagName.toLowerCase() === 'summary'
-    ) {
+    if (element instanceof HTMLDetailsElement || element.tagName.toLowerCase() === 'summary') {
       element.addEventListener('click', intercept, { capture: true });
       log('Hijacked details/summary in header:', element.className || element.id);
       return true;

@@ -43,17 +43,17 @@ pnpm dev  # http://localhost:8080
 
 ### Commands
 
-| Command             | Description                              |
-| ------------------- | ---------------------------------------- |
+| Command             | Description                                |
+| ------------------- | ------------------------------------------ |
 | `pnpm dev`          | Dev embed build + preview (localhost:8080) |
-| `pnpm build`        | Production build (minified + inline CSS) |
-| `pnpm build:dev`    | Dev build (unminified + inline CSS)      |
-| `pnpm test:cdn`     | Build + test locally in browser          |
-| `pnpm type-check`   | TypeScript checking                      |
-| `pnpm lint`         | ESLint                                   |
-| `pnpm format`       | Prettier                                 |
-| `pnpm check:strict` | All checks + build                       |
-| `pnpm clean`        | Remove build artifacts                   |
+| `pnpm build`        | Production build (minified + inline CSS)   |
+| `pnpm build:dev`    | Dev build (unminified + inline CSS)        |
+| `pnpm test:cdn`     | Build + test locally in browser            |
+| `pnpm type-check`   | TypeScript checking                        |
+| `pnpm lint`         | ESLint                                     |
+| `pnpm format`       | Prettier                                   |
+| `pnpm check:strict` | All checks + build                         |
+| `pnpm clean`        | Remove build artifacts                     |
 
 **Note:** `build` and `build:dev` automatically inline processed CSS into the JS bundle for Shadow DOM isolation.
 
@@ -75,6 +75,7 @@ pnpm dev
 ```
 
 3. In Chrome/Edge DevTools:
+
 - Network: confirm `kalifind-search.js` **and** `kalifind-search.js.map` load with 200
 - Settings: ensure **JavaScript source maps** are enabled
 - Sources: set breakpoints in `src/embed/bootstrap.tsx` / `src/embed/utils/dom-setup.ts`
@@ -86,6 +87,7 @@ window.dispatchEvent(new CustomEvent('kalifinder:open', { detail: { query: 'test
 ```
 
 Other useful debug hooks:
+
 - After the script loads, the widget exposes `window.Kalifinder` (UMD) and sets `window.KalifinderController`
 - You can open the widget with `window.KalifinderController?.open('test')`
 - UI debug utility: `window.__KALIFINDER_UI_DEBUG__`

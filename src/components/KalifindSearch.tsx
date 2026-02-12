@@ -547,7 +547,7 @@ const KalifindSearch: React.FC<{
     initialMaxPrice: maxPrice,
   });
 
-  const { addingToCart, cartMessage, addToCart: addToCartHandler } = useCart();
+  const { cartMessage, addToCart: addToCartHandler } = useCart();
 
   // Helper function to get the appropriate facet count
   // Categories, brands, tags: Use reactive counts from backend (disjunctive faceting)
@@ -708,7 +708,7 @@ const KalifindSearch: React.FC<{
     }
   }, [recentSearches]);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, 800);
   const debouncedFilters = useDebounce(filters, 500);
 
   // Fuzzy matching function for better autocomplete
@@ -1798,9 +1798,10 @@ const KalifindSearch: React.FC<{
     });
 
     // Fetch all products when search query is empty, or perform search with query
+    // Skip search for very short queries (1-2 chars) to reduce unnecessary requests
     if (!debouncedSearchQuery?.trim()) {
       void performSearch(''); // Pass empty string to fetch all products
-    } else {
+    } else if (debouncedSearchQuery.trim().length >= 3) {
       void performSearch(debouncedSearchQuery);
     }
   }, [
@@ -2308,61 +2309,70 @@ const KalifindSearch: React.FC<{
   }, [searchAbortController]);
 
   // Function to calculate discount percentage
-  const calculateDiscountPercentage = (regularPrice: string, salePrice: string): number | null => {
-    const regular = parsePriceToNumber(regularPrice);
-    const sale = parsePriceToNumber(salePrice);
+  const calculateDiscountPercentage = useCallback(
+    (regularPrice: string, salePrice: string): number | null => {
+      const regular = parsePriceToNumber(regularPrice);
+      const sale = parsePriceToNumber(salePrice);
 
-    if (
-      regular === undefined ||
-      sale === undefined ||
-      regular <= 0 ||
-      sale <= 0 ||
-      sale >= regular
-    ) {
-      return null;
-    }
+      if (
+        regular === undefined ||
+        sale === undefined ||
+        regular <= 0 ||
+        sale <= 0 ||
+        sale >= regular
+      ) {
+        return null;
+      }
 
-    const discount = ((regular - sale) / regular) * 100;
-    return Math.round(discount);
-  };
+      const discount = ((regular - sale) / regular) * 100;
+      return Math.round(discount);
+    },
+    []
+  );
 
   // Product click handler
-  const handleProductClick = (product: Product) => {
-    // Close autocomplete dropdown when product is clicked
-    setShowAutocomplete(false);
-    setAutocompleteSuggestions([]);
-    setHighlightedSuggestionIndex(-1);
+  const handleProductClick = useCallback(
+    (product: Product) => {
+      // Close autocomplete dropdown when product is clicked
+      setShowAutocomplete(false);
+      setAutocompleteSuggestions([]);
+      setHighlightedSuggestionIndex(-1);
 
-    // Track result click with UBI (include query_id for attribution)
-    const ubiClient = getUBIClient();
-    if (ubiClient) {
-      const position = sortedProducts.findIndex((p) => p.id === product.id) + 1;
-      ubiClient.trackResultClick(product.id, position, currentQueryId);
-      logger.debug('Tracked product click', {
-        productId: product.id,
-        position,
-        queryId: currentQueryId,
-      });
-    }
+      // Track result click with UBI (include query_id for attribution)
+      const ubiClient = getUBIClient();
+      if (ubiClient) {
+        const position = sortedProducts.findIndex((p) => p.id === product.id) + 1;
+        ubiClient.trackResultClick(product.id, position, currentQueryId);
+        logger.debug('Tracked product click', {
+          productId: product.id,
+          position,
+          queryId: currentQueryId,
+        });
+      }
 
-    if (product.productUrl) {
-      window.open(product.productUrl, '_self');
-    } else if (product.url) {
-      window.open(product.url, '_self');
-    } else {
-      console.warn('No product URL available for:', product.title);
-    }
-  };
+      if (product.productUrl) {
+        window.open(product.productUrl, '_self');
+      } else if (product.url) {
+        window.open(product.url, '_self');
+      } else {
+        console.warn('No product URL available for:', product.title);
+      }
+    },
+    [sortedProducts, currentQueryId]
+  );
 
   // Cart functionality - now using useCart hook
-  const handleAddToCart = async (product: Product) => {
-    if (!storeUrl) {
-      console.error('Store URL is required for cart operations');
-      return;
-    }
+  const handleAddToCart = useCallback(
+    async (product: Product) => {
+      if (!storeUrl) {
+        console.error('Store URL is required for cart operations');
+        return;
+      }
 
-    await addToCartHandler(product, storeUrl);
-  };
+      await addToCartHandler(product, storeUrl);
+    },
+    [storeUrl, addToCartHandler]
+  );
 
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4">
@@ -4449,7 +4459,6 @@ const KalifindSearch: React.FC<{
                       recommendations={recommendations}
                       handleProductClick={handleProductClick}
                       calculateDiscountPercentage={calculateDiscountPercentage}
-                      addingToCart={addingToCart}
                       handleAddToCart={handleAddToCart}
                       formatPrice={formatPrice}
                     />
@@ -4505,7 +4514,6 @@ const KalifindSearch: React.FC<{
                       product={product}
                       onProductClick={handleProductClick}
                       onAddToCart={handleAddToCart}
-                      isAddingToCart={addingToCart === product.id}
                       calculateDiscountPercentage={calculateDiscountPercentage}
                       formatPrice={formatPrice}
                     />

@@ -6,7 +6,7 @@ import {
   hasValidDiscount,
   isValidPrice,
 } from '@/utils/price';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import type { Product } from '../../types';
 import { useTranslation } from 'react-i18next';
 
@@ -14,7 +14,6 @@ interface ProductCardProps {
   product: Product;
   onProductClick: (product: Product) => void;
   onAddToCart: (product: Product) => void;
-  isAddingToCart: boolean;
   calculateDiscountPercentage?: (regularPrice: string, salePrice: string) => number | null;
   formatPrice: (value?: string | null) => string;
 }
@@ -23,11 +22,12 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   product,
   onProductClick,
   onAddToCart,
-  isAddingToCart,
   calculateDiscountPercentage,
   formatPrice,
 }) => {
   const { t } = useTranslation();
+  // Local cart-loading state: only THIS card re-renders when its button is clicked
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   // Memoize expensive calculations
   const hasDiscount = useMemo(
     () => hasValidDiscount(product.regularPrice ?? product.price, product.salePrice),
@@ -82,9 +82,14 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   }, [onProductClick, product]);
 
   const handleAddToCart = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.stopPropagation(); // Prevent card click
-      onAddToCart(product);
+      setIsAddingToCart(true);
+      try {
+        await onAddToCart(product);
+      } finally {
+        setIsAddingToCart(false);
+      }
     },
     [onAddToCart, product]
   );
@@ -248,12 +253,15 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 // Export memoized component to prevent unnecessary re-renders
 export const ProductCard = memo(ProductCardComponent, (prevProps, nextProps) => {
   // Custom comparison function for better memoization
+  // Note: isAddingToCart is local state, so it's not compared here
   return (
     prevProps.product.id === nextProps.product.id &&
-    prevProps.isAddingToCart === nextProps.isAddingToCart &&
     prevProps.product.price === nextProps.product.price &&
     prevProps.product.salePrice === nextProps.product.salePrice &&
-    prevProps.product.stockStatus === nextProps.product.stockStatus
+    prevProps.product.stockStatus === nextProps.product.stockStatus &&
+    prevProps.onAddToCart === nextProps.onAddToCart &&
+    prevProps.onProductClick === nextProps.onProductClick &&
+    prevProps.formatPrice === nextProps.formatPrice
   );
 });
 

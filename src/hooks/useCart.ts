@@ -5,17 +5,14 @@ import { logger } from '../utils/logger';
 import { safeLocalStorage, storageHelpers } from '../utils/safe-storage';
 
 interface UseCartReturn {
-  addingToCart: string | null;
   cartMessage: string | null;
   addToCart: (product: Product, storeUrl?: string) => Promise<void>;
 }
 
 export function useCart(): UseCartReturn {
-  const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
 
   const addToCart = useCallback(async (product: Product, storeUrl?: string) => {
-    setAddingToCart(product.id);
     setCartMessage(`Adding ${product.title} to cart...`);
 
     try {
@@ -47,13 +44,10 @@ export function useCart(): UseCartReturn {
       } else {
         setTimeout(() => setCartMessage(null), 5000);
       }
-    } finally {
-      setAddingToCart(null);
     }
   }, []);
 
   return {
-    addingToCart,
     cartMessage,
     addToCart,
   };
