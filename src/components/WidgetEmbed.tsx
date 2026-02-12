@@ -99,6 +99,15 @@ export default function WidgetEmbed({ storeUrl }: WidgetEmbedProps) {
   useEffect(() => {
     const keydownBlocker = (e: KeyboardEvent) => {
       if (!isOpen) return;
+
+      // Close widget on Escape
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        return;
+      }
+
       const isSlash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey;
       const isCommandK = (e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey);
       if (isSlash || isCommandK) {
