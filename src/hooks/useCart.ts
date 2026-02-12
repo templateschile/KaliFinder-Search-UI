@@ -24,10 +24,8 @@ export function useCart(): UseCartReturn {
         // Track potential checkout initiation when cart has multiple items
         trackCheckoutInitiation();
 
-        // On success: reload the page
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
+        // Auto-dismiss success message after 3 seconds
+        setTimeout(() => setCartMessage(null), 3000);
       } else {
         throw new Error('Failed to add to cart');
       }
@@ -36,14 +34,8 @@ export function useCart(): UseCartReturn {
       const errorMessage = handleCartError(error, product);
       setCartMessage(`✗ ${errorMessage}`);
 
-      // On failure: navigate to product page in same tab
-      if (product.productUrl) {
-        setTimeout(() => {
-          window.location.href = product.productUrl!;
-        }, 1000);
-      } else {
-        setTimeout(() => setCartMessage(null), 5000);
-      }
+      // Auto-dismiss error message after 5 seconds
+      setTimeout(() => setCartMessage(null), 5000);
     }
   }, []);
 
