@@ -410,7 +410,8 @@ const KalifindSearch: React.FC<{
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(true); // Toggle for autocomplete suggestions
-  const [isPending, startTransition] = useTransition();
+  const [isSearchPending, startSearchTransition] = useTransition();
+  const [, startAutocompleteTransition] = useTransition();
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
   const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
@@ -457,12 +458,11 @@ const KalifindSearch: React.FC<{
   // New state variables for search behavior
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [isSearchingFromSuggestion, setIsSearchingFromSuggestion] = useState(false);
-  const [forceSearch, setForceSearch] = useState(0);
   const [searchAbortController, setSearchAbortController] = useState<AbortController | null>(null);
   const [isFromSuggestionSelection, setIsFromSuggestionSelection] = useState(false);
   const lastActionRef = useRef<'typing' | 'suggestion' | null>(null);
   const userTypingRef = useRef(false);
-  const lastSearchedQueryRef = useRef<string | null>(null);
+  const lastSearchedQueryRef = useRef<string>(''); // track last confirmed query (empty means none yet)
   const lastSearchedFiltersRef = useRef<string>('');
 
   const [recommendations, setRecommendations] = useState<Product[]>([]);
@@ -470,6 +470,7 @@ const KalifindSearch: React.FC<{
   const [isInitialState, setIsInitialState] = useState(true);
   const [searchMessage, setSearchMessage] = useState<string | undefined>(undefined);
   const [isShowingRecommended, setIsShowingRecommended] = useState(false);
+  const [hasCompletedSearch, setHasCompletedSearch] = useState(false);
   const [currentQueryId, setCurrentQueryId] = useState<string | undefined>(undefined); // Track query_id from search responses for analytics
   const [maxPrice, setMaxPrice] = useState<number>(10000); // Default max price (global)
   const [filteredMaxPrice, setFilteredMaxPrice] = useState<number>(10000); // Max price from filtered results
@@ -1060,7 +1061,7 @@ const KalifindSearch: React.FC<{
     } catch (error) {
       console.error('Failed to fetch global facets:', error);
     }
-  }, [storeUrl, globalFacetsFetched]);
+  }, [storeUrl, globalFacetsFetched, t]);
 
   // Fetch vendor-controlled recommendations
   const fetchRecommendations = useCallback(async () => {
@@ -1186,6 +1187,7 @@ const KalifindSearch: React.FC<{
       // - Show recent/latest searches below the search input
       setShowRecommendations(true);
       setIsInitialState(true);
+      setHasCompletedSearch(false);
     } else if (!searchQuery && hasSearched) {
       // User Clears Search (after typing at least once)
       // - Fetch all products and display in results
@@ -1285,7 +1287,7 @@ const KalifindSearch: React.FC<{
       !isFromSuggestionSelection
     ) {
       setShowAutocomplete(true);
-      startTransition(() => {
+      startAutocompleteTransition(() => {
         setIsAutocompleteLoading(true);
         void (async () => {
           try {
@@ -1355,6 +1357,14 @@ const KalifindSearch: React.FC<{
     (query: string) => {
       if (!storeUrl) return;
 
+      // Avoid firing an empty query on initial load or before the first real search.
+      // This prevents stray requests when the component mounts or the user clicks
+      // something before actually typing a term.
+      if (!query.trim() && !hasSearched && isInitialState) {
+        console.log('⚠️ [performSearch] skipping empty initial search');
+        return;
+      }
+
       // Cancel any existing search request
       if (searchAbortController) {
         searchAbortController.abort();
@@ -1362,9 +1372,10 @@ const KalifindSearch: React.FC<{
 
       const newAbortController = new AbortController();
       setSearchAbortController(newAbortController);
+      setIsLoading(true);
+      setHasCompletedSearch(false);
 
-      startTransition(() => {
-        setIsLoading(true);
+      startSearchTransition(() => {
         setCurrentPage(1);
         setHasMoreProducts(true);
         setDisplayedProducts(0);
@@ -1386,6 +1397,7 @@ const KalifindSearch: React.FC<{
             typeof debouncedFilters.priceRange[1] === 'undefined'
           ) {
             setFilteredProducts([]);
+            setHasCompletedSearch(true);
             setIsLoading(false);
             return;
           }
@@ -1697,12 +1709,14 @@ const KalifindSearch: React.FC<{
             setHasMoreProducts(hasMore);
             setSearchMessage(message);
             setIsShowingRecommended(showingRecommended);
+            setHasCompletedSearch(true);
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
               return;
             }
             console.error('Failed to fetch products:', error);
             setFilteredProducts([]);
+            setHasCompletedSearch(true);
           } finally {
             setIsLoading(false);
             setSearchAbortController(null);
@@ -1719,18 +1733,14 @@ const KalifindSearch: React.FC<{
       storeType,
       updateCurrencyFromProducts,
       maxPrice,
+      hasSearched,
+      isInitialState,
     ]
   );
 
   // search products
   useEffect(() => {
-    console.log('🎯 [SEARCH EFFECT] Triggered with:', {
-      saleStatus: debouncedFilters.saleStatus,
-      stockStatus: debouncedFilters.stockStatus,
-      categories: debouncedFilters.categories,
-      priceRange: debouncedFilters.priceRange,
-      query: debouncedSearchQuery,
-    });
+    console.log('🎯 [SEARCH EFFECT] Triggered by filters change');
 
     if (!storeUrl) {
       console.log('⏭️  [SEARCH EFFECT] Skipping - no store URL');
@@ -1748,7 +1758,7 @@ const KalifindSearch: React.FC<{
 
     // Transition out of initial state when filters are applied
     const justTransitioned =
-      hasActiveDebouncedFilters && isInitialState && !debouncedSearchQuery?.trim();
+      hasActiveDebouncedFilters && isInitialState && !lastSearchedQueryRef.current;
     if (justTransitioned) {
       console.log('🔧 [SEARCH EFFECT] Transitioning out of initial state (filters applied)');
       setShowRecommendations(false);
@@ -1760,8 +1770,7 @@ const KalifindSearch: React.FC<{
     // Skip search if we're in initial state showing recommendations (but allow if we just transitioned)
     if (
       !justTransitioned &&
-      (showRecommendations ||
-        (isInitialState && !hasActiveDebouncedFilters && !debouncedSearchQuery?.trim()))
+      (showRecommendations || (isInitialState && !hasActiveDebouncedFilters && !lastSearchedQueryRef.current))
     ) {
       console.log('⏭️  [SEARCH EFFECT] Skipping - initial state or recommendations');
       return;
@@ -1774,7 +1783,7 @@ const KalifindSearch: React.FC<{
     }
 
     // Check if we've already searched for this exact query and filters
-    const currentQuery = debouncedSearchQuery?.trim() || '';
+    const currentQuery = lastSearchedQueryRef.current.trim();
     const currentFilters = JSON.stringify(debouncedFilters);
 
     if (
@@ -1797,21 +1806,15 @@ const KalifindSearch: React.FC<{
       query: currentQuery,
     });
 
-    // Fetch all products when search query is empty, or perform search with query
-    // Skip search for very short queries (1-2 chars) to reduce unnecessary requests
-    if (!debouncedSearchQuery?.trim()) {
-      void performSearch(''); // Pass empty string to fetch all products
-    } else if (debouncedSearchQuery.trim().length >= 3) {
-      void performSearch(debouncedSearchQuery);
-    }
+    // Only perform search for filter changes (typing-triggered searches are handled explicitly)
+    // Do not trigger search on every keystroke.
+    void performSearch(currentQuery);
   }, [
-    debouncedSearchQuery,
     debouncedFilters,
     storeUrl,
     showRecommendations,
     isInitialState,
     isSearchingFromSuggestion,
-    forceSearch,
     performSearch,
     maxPrice,
     setHasSearched,
@@ -1944,6 +1947,10 @@ const KalifindSearch: React.FC<{
     // Set the search query - the search useEffect will automatically trigger the search
     setSearchQuery(suggestion);
 
+    // Execute search immediately for the selected suggestion (bypass effect)
+    lastSearchedQueryRef.current = suggestion.trim();
+    void performSearch(suggestion);
+
     // Blur input to close any mobile keyboards
     inputRef.current?.blur();
   };
@@ -1978,8 +1985,9 @@ const KalifindSearch: React.FC<{
         setHasSearched(true);
       }
 
-      // Force a search by incrementing the forceSearch counter
-      setForceSearch((prev) => prev + 1);
+      // Execute search immediately when Enter is pressed (manual submit)
+      lastSearchedQueryRef.current = query.trim();
+      void performSearch(query);
 
       inputRef.current?.blur();
     } else if (event.key === 'ArrowDown') {
@@ -2063,7 +2071,7 @@ const KalifindSearch: React.FC<{
     setIsShowingRecommended(false);
 
     // Reset search cache refs to force fresh search with NO filters
-    lastSearchedQueryRef.current = null;
+    lastSearchedQueryRef.current = ''; // reset to empty string (no previous query)
     lastSearchedFiltersRef.current = '';
     lastActionRef.current = null;
     userTypingRef.current = false;
@@ -2079,8 +2087,8 @@ const KalifindSearch: React.FC<{
       setSearchAbortController(null);
     }
 
-    // Force a search refresh with cleared filters to get global facet counts
-    setForceSearch((prev) => prev + 1);
+    // Execute search refresh with cleared filters to get global facet counts
+    void performSearch('');
   };
 
   const handleCategoryChange = (category: string) => {
@@ -4047,6 +4055,9 @@ const KalifindSearch: React.FC<{
                         className="text-foreground cursor-pointer touch-manipulation text-sm font-medium transition-colors group-hover:text-purple-600"
                         onClick={() => {
                           handleSearch(search);
+                          // manual click on recent search should run the query immediately
+                          lastSearchedQueryRef.current = search.trim();
+                          void performSearch(search);
                         }}
                         role="button"
                         tabIndex={0}
@@ -4054,6 +4065,8 @@ const KalifindSearch: React.FC<{
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             handleSearch(search);
+                            lastSearchedQueryRef.current = search.trim();
+                            void performSearch(search);
                           }
                         }}
                       >
@@ -4087,7 +4100,7 @@ const KalifindSearch: React.FC<{
                   className="sr-only"
                   id="search-results-announcement"
                 >
-                  {isLoading || isPending
+                  {isLoading || isSearchPending
                     ? t('search.loading')
                     : isShowingRecommended
                       ? `${displayedProducts} recommended products`
@@ -4106,7 +4119,7 @@ const KalifindSearch: React.FC<{
                 {/* Results count - Compact mobile */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900 sm:text-base">
-                    {isLoading || isPending ? (
+                    {isLoading || isSearchPending ? (
                       <span className="flex items-center gap-1.5">
                         <div className="flex space-x-0.5">
                           <div className="h-1 w-1 animate-bounce rounded-full bg-purple-600"></div>
@@ -4138,7 +4151,7 @@ const KalifindSearch: React.FC<{
                     )}
                   </span>
                   {/* Filters badge - Mobile hidden */}
-                  {isAnyFilterActive && !isLoading && !isPending && (
+                  {isAnyFilterActive && !isLoading && !isSearchPending && (
                     <span className="hidden items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 sm:inline-flex">
                       <Filter className="h-3 w-3" />
                       <span>Filters</span>
@@ -4485,7 +4498,7 @@ const KalifindSearch: React.FC<{
                   </div>
                 )}
               </div>
-            ) : isLoading || isPending ? (
+            ) : isLoading || isSearchPending ? (
               <LoadingSkeleton />
             ) : (
               <>
@@ -4579,7 +4592,8 @@ const KalifindSearch: React.FC<{
               </>
             )}
             {!isLoading &&
-              !isPending &&
+              !isSearchPending &&
+              hasCompletedSearch &&
               !showRecommendations &&
               filteredProducts.length === 0 &&
               hasSearched && (
